@@ -9,7 +9,8 @@ import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import kotlin.math.abs
 
-class TransactionAdapter(private val transactions: ArrayList<Transaction>): RecyclerView.Adapter<TransactionAdapter.TransactionHolder>() {
+class TransactionAdapter(private var transactions: List<Transaction>) :
+    RecyclerView.Adapter<TransactionAdapter.TransactionHolder>() {
 
     class TransactionHolder(view: View): RecyclerView.ViewHolder(view) {
         val label: TextView = view.findViewById(R.id.label)
@@ -38,5 +39,9 @@ class TransactionAdapter(private val transactions: ArrayList<Transaction>): Recy
 
     override fun getItemCount(): Int {
         return transactions.size
+    }
+    fun setData(transactions: List<Transaction>){
+        this.transactions = transactions
+        notifyDataSetChanged()
     }
 }

@@ -3,17 +3,22 @@ package com.example.budgettracker
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.room.Room
 import com.example.budgettracker.databinding.ActivityMainBinding
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
-    private lateinit var transactions: java.util.ArrayList<Transaction>
+    private lateinit var transactions: List<Transaction>
     private lateinit var  transactionAdapter: TransactionAdapter
     private lateinit var linearlayoutManager: LinearLayoutManager
     private lateinit var binding: ActivityMainBinding
+    private lateinit var db : AppDatabase
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -22,17 +27,14 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        transactions = arrayListOf(
-            Transaction("Weekend Budget", 400.00),
-            Transaction("Bananas", -50.00),
-            Transaction("Gasoline", -40.00),
-            Transaction("Breakfast", -9.99),
-            Transaction("Water Bottles", -20.00),
-            Transaction("Parking", -40.00)
-        )
+        transactions = arrayListOf()
 
         transactionAdapter = TransactionAdapter(transactions)
         linearlayoutManager = LinearLayoutManager(this)
+
+        db = Room.databaseBuilder(this,
+        AppDatabase::class.java,
+        "transactions").build()
 
         binding.recyclerview.apply {
             adapter = transactionAdapter
@@ -40,11 +42,22 @@ class MainActivity : AppCompatActivity() {
 
         }
 
-        updateDashboard()
 
-        findViewById<FloatingActionButton>(R.id.addBtn).setOnClickListener {
-            val intent = Intent(this, AddTransactionActivity::class.java)
-            startActivity(intent)
+        binding.addBtn.setOnClickListener {
+            val intent = Intent(this, AddTransactionActivity::class.java).also {
+                startActivity(it)
+            }
+        }
+    }
+
+    private fun fetchAll(){
+        GlobalScope.launch {
+            transactions = db.transactionDao().getAll()
+
+            runOnUiThread{
+                updateDashboard()
+                transactionAdapter.setData(transactions)
+            }
         }
     }
 
@@ -56,6 +69,11 @@ class MainActivity : AppCompatActivity() {
         binding.balance.text = "₹ %.2f".format(totalAmount)
         binding.budget.text = "₹ %.2f".format(budgetAmount)
         binding.expense.text = "₹ %.2f".format(expenseAmount)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        fetchAll()
     }
 
 }
